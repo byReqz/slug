@@ -3,6 +3,7 @@ package slug
 import (
 	"fmt"
 	"github.com/fatih/color"
+	"io"
 	"os"
 	"time"
 )
@@ -17,21 +18,22 @@ var (
 )
 
 type Logger struct {
-	Enabled       bool   // state of logger
-	Color         bool   // whether to use colors
-	Level         int    // the minimum log level the logger will output
-	DebugFormat   string // formatstring for debug level logs
-	DebugPrefix   string // message prefix for debug level logs
-	DebugSuffix   string // message suffix for debug level logs
-	InfoFormat    string // formatstring for info level logs
-	InfoPrefix    string // message prefix for info level logs
-	InfoSuffix    string // message suffix for info level logs
-	WarningFormat string // formatstring for warning level logs
-	WarningPrefix string // message prefix for warning level logs
-	WarningSuffix string // message suffix for warning level logs
-	ErrorFormat   string // formatstring for error level logs
-	ErrorPrefix   string // message prefix for error level logs
-	ErrorSuffix   string // message suffix for error level logs
+	Enabled       bool      // state of logger
+	Color         bool      // whether to use colors
+	Level         int       // the minimum log level the logger will output
+	Output        io.Writer // output of the logger
+	DebugFormat   string    // formatstring for debug level logs
+	DebugPrefix   string    // message prefix for debug level logs
+	DebugSuffix   string    // message suffix for debug level logs
+	InfoFormat    string    // formatstring for info level logs
+	InfoPrefix    string    // message prefix for info level logs
+	InfoSuffix    string    // message suffix for info level logs
+	WarningFormat string    // formatstring for warning level logs
+	WarningPrefix string    // message prefix for warning level logs
+	WarningSuffix string    // message suffix for warning level logs
+	ErrorFormat   string    // formatstring for error level logs
+	ErrorPrefix   string    // message prefix for error level logs
+	ErrorSuffix   string    // message suffix for error level logs
 }
 
 func init() {
@@ -43,6 +45,7 @@ func NewLogger() *Logger {
 	var l Logger
 	l.Enabled = true
 	l.Color = true
+	l.Output = os.Stdout
 	l.DebugFormat = "%s "
 	l.DebugPrefix = color.MagentaString("Debug:")
 	l.DebugSuffix = "| " + fmt.Sprint(time.Now().Round(time.Second))
@@ -66,12 +69,12 @@ func (l Logger) Sprintln(v ...any) string {
 	return ""
 }
 
-// Debug prints a log-entry at debug level
+// Debug prints a log-entry at debug level to the given writer
 func (l Logger) Debug(v ...any) {
 	if l.Level > -1 {
 		return
 	}
-	fmt.Print(l.SDebugln(v...))
+	l.Output.Write([]byte(l.SDebugln(v...)))
 }
 
 // SDebugln returns a log-entry at debug level with a newline at the end
@@ -101,7 +104,7 @@ func (l Logger) Error(v ...any) {
 	if l.Level > -1 {
 		return
 	}
-	fmt.Print(l.SErrorln(v...))
+	l.Output.Write([]byte(l.SErrorln(v...)))
 }
 
 // SErrorln returns a log-entry at error level with a newline at the end
@@ -130,4 +133,15 @@ func (l Logger) SErrorf(format string, v ...any) string {
 func (l Logger) Fatal(v ...any) {
 	l.Error(v...)
 	os.Exit(1)
+}
+
+// Write bytes to the loggers writer
+func (l Logger) Write(b []byte) {
+	_, err := l.Output.Write(b)
+	if err != nil {
+		_, err = os.Stdout.Write(append([]byte("Failed printing to given output writer, falling back to stdout: "+err.Error()+"\n"), b...)) // try to fall back to stdout if error occured
+		if err != nil {
+			panic("Failed printing to given output writer and also failed falling back to stdout")
+		}
+	}
 }
