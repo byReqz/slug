@@ -74,7 +74,7 @@ func (l Logger) Debug(v ...any) {
 	if l.Level > -1 {
 		return
 	}
-	l.Output.Write([]byte(l.SDebugln(v...)))
+	l.Write([]byte(l.SDebugln(v...)))
 }
 
 // SDebugln returns a log-entry at debug level with a newline at the end
@@ -104,7 +104,7 @@ func (l Logger) Error(v ...any) {
 	if l.Level > -1 {
 		return
 	}
-	l.Output.Write([]byte(l.SErrorln(v...)))
+	l.Write([]byte(l.SErrorln(v...)))
 }
 
 // SErrorln returns a log-entry at error level with a newline at the end
