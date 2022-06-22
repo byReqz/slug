@@ -150,7 +150,7 @@ func (l *Logger) Fatal(v ...any) {
 func (l *Logger) Write(b []byte) {
 	_, err := l.Output.Write(b)
 	if err != nil {
-		_, err = os.Stdout.Write(append([]byte("Failed printing to given output writer, falling back to stdout: "+err.Error()+"\n"), b...)) // try to fall back to stdout if error occured
+		_, err = os.Stdout.Write(append([]byte("Failed printing to given output writer, falling back to stdout: "+err.Error()+"\n"), b...)) // try to fall back to stdout if error occurred
 		if err != nil {
 			panic("Failed printing to given output writer and also failed falling back to stdout")
 		}
