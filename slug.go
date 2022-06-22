@@ -67,7 +67,7 @@ func NewLogger() *Logger {
 }
 
 // Println prints a level-less log-entry to the given writer
-func (l Logger) Println(v ...any) {
+func (l *Logger) Println(v ...any) {
 	l.Write([]byte(l.Sprintln(v...)))
 }
 
@@ -81,14 +81,14 @@ func (l Logger) Sprintln(v ...any) string {
 }
 
 // Sprintf returns a level-less log-entry following the format
-func (l Logger) Sprintf(format string, v ...any) string {
+func (l *Logger) Sprintf(format string, v ...any) string {
 	p := append([]any{l.DefaultPrefix}, v...)
 	p = append(p, l.DefaultSuffix)
 	return fmt.Sprintf(format, p...)
 }
 
 // Debug prints a log-entry at debug level to the given writer
-func (l Logger) Debug(v ...any) {
+func (l *Logger) Debug(v ...any) {
 	if l.Level > -1 {
 		return
 	}
@@ -108,7 +108,7 @@ func (l Logger) Sdebugln(v ...any) string {
 }
 
 // Sdebugf returns a log-entry at debug level following the format
-func (l Logger) Sdebugf(format string, v ...any) string {
+func (l *Logger) Sdebugf(format string, v ...any) string {
 	if l.Level > -1 {
 		return ""
 	}
@@ -118,7 +118,7 @@ func (l Logger) Sdebugf(format string, v ...any) string {
 }
 
 // Error prints a log-entry at error level to the given writer
-func (l Logger) Error(v ...any) {
+func (l *Logger) Error(v ...any) {
 	if l.Level > -1 {
 		return
 	}
@@ -138,7 +138,7 @@ func (l Logger) Serrorln(v ...any) string {
 }
 
 // Serrorf returns a log-entry at error level following the format
-func (l Logger) Serrorf(format string, v ...any) string {
+func (l *Logger) Serrorf(format string, v ...any) string {
 	if l.Level > -1 {
 		return ""
 	}
@@ -148,13 +148,13 @@ func (l Logger) Serrorf(format string, v ...any) string {
 }
 
 // Fatal prints a log-entry at error level and exits with 1
-func (l Logger) Fatal(v ...any) {
+func (l *Logger) Fatal(v ...any) {
 	l.Error(v...)
 	os.Exit(1)
 }
 
 // Write bytes to the loggers writer
-func (l Logger) Write(b []byte) {
+func (l *Logger) Write(b []byte) {
 	_, err := l.Output.Write(b)
 	if err != nil {
 		_, err = os.Stdout.Write(append([]byte("Failed printing to given output writer, falling back to stdout: "+err.Error()+"\n"), b...)) // try to fall back to stdout if error occured
