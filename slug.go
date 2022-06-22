@@ -163,3 +163,29 @@ func (l *Logger) Write(b []byte) {
 		}
 	}
 }
+
+// Println prints a level-less log-entry to the default writer
+func Println(v ...any) {
+	DefaultLogger.Write([]byte(DefaultLogger.Sprintln(v...)))
+}
+
+// Debug prints a log-entry at debug level to the default writer
+func Debug(v ...any) {
+	if DefaultLogger.Level > -1 {
+		return
+	}
+	DefaultLogger.Write([]byte(DefaultLogger.Sdebugln(v...)))
+}
+
+// Error prints a log-entry at error level to the default writer
+func Error(v ...any) {
+	if DefaultLogger.Level > -1 {
+		return
+	}
+	DefaultLogger.Write([]byte(DefaultLogger.Serrorln(v...)))
+}
+
+// Fatal prints a log-entry at the default error level and exits with 1
+func Fatal(v ...any) {
+	DefaultLogger.Fatal(v...)
+}
