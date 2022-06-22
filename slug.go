@@ -50,7 +50,7 @@ func NewLogger() *Logger {
 	l.Color = true
 	l.Output = os.Stdout
 	l.DefaultFormat = "%s "
-	l.DefaultPrefix = fmt.Sprint(time.Now().Round(time.Second)) + " | "
+	l.DefaultPrefix = fmt.Sprint(time.Now().Round(time.Second).Format("2006/01/02 15:04:05")) + " | "
 	l.DebugFormat = l.DefaultFormat
 	l.DebugPrefix = l.DefaultPrefix + color.MagentaString("Debug:")
 	l.DebugSuffix = l.DefaultSuffix
