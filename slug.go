@@ -11,6 +11,7 @@ import (
 var DefaultLogger *Logger // logger using default configuration
 
 var (
+	NoLevel      = -2
 	DebugLevel   = -1
 	InfoLevel    = 0
 	WarningLevel = 1
@@ -49,21 +50,43 @@ func NewLogger() *Logger {
 	l.Enabled = true
 	l.Color = true
 	l.Output = os.Stdout
-	l.DefaultFormat = "%s "
+	l.DefaultFormat = "%s"
 	l.DefaultPrefix = fmt.Sprint(time.Now().Round(time.Second).Format("2006/01/02 15:04:05")) + " | "
 	l.DebugFormat = l.DefaultFormat
-	l.DebugPrefix = l.DefaultPrefix + color.MagentaString("Debug:")
+	l.DebugPrefix = l.DefaultPrefix + color.MagentaString("Debug: ")
 	l.DebugSuffix = l.DefaultSuffix
 	l.InfoFormat = l.DefaultFormat
-	l.InfoPrefix = l.DefaultPrefix + color.CyanString("Info:")
+	l.InfoPrefix = l.DefaultPrefix + color.CyanString("Info: ")
 	l.InfoSuffix = l.DefaultSuffix
 	l.WarningFormat = l.DefaultFormat
-	l.WarningPrefix = l.DefaultPrefix + color.YellowString("Warning:")
+	l.WarningPrefix = l.DefaultPrefix + color.YellowString("Warning: ")
 	l.WarningSuffix = l.DefaultSuffix
 	l.ErrorFormat = l.DefaultFormat
-	l.ErrorPrefix = l.DefaultPrefix + color.RedString("Error:")
+	l.ErrorPrefix = l.DefaultPrefix + color.RedString("Error: ")
 	l.ErrorSuffix = l.DefaultSuffix
 	return &l
+}
+
+// sprintln returns a log-entry at the given level with the given format, prefix, suffix and args + newline at the end
+func sprintln(loggerlevel int, loglevel int, format string, prefix string, suffix string, v ...any) string {
+	if loggerlevel > loglevel {
+		return ""
+	}
+	for range v {
+		format = format + "%v "
+	}
+	format = format + "%s"
+	return sprintf(loggerlevel, loglevel, format, prefix, suffix, v...) + "\n"
+}
+
+// sprintf returns a log-entry at the given level with the given format, prefix, suffix and args
+func sprintf(loggerlevel int, loglevel int, format string, prefix string, suffix string, v ...any) string {
+	if loggerlevel > loglevel {
+		return ""
+	}
+	p := append([]any{prefix}, v...)
+	p = append(p, suffix)
+	return fmt.Sprintf(format, p...)
 }
 
 // Println prints a level-less log-entry to the given writer
@@ -73,23 +96,17 @@ func (l *Logger) Println(v ...any) {
 
 // Sprintln returns a level-less log-entry with a newline at the end
 func (l Logger) Sprintln(v ...any) string {
-	for range v {
-		l.DefaultFormat = l.DefaultFormat + "%v "
-	}
-	l.DefaultFormat = l.DefaultFormat + "%s"
-	return l.Sprintf(l.DefaultFormat, v...) + "\n"
+	return sprintln(NoLevel, NoLevel, l.DefaultFormat, l.DefaultPrefix, l.DefaultSuffix, v...)
 }
 
 // Sprintf returns a level-less log-entry following the format
 func (l *Logger) Sprintf(format string, v ...any) string {
-	p := append([]any{l.DefaultPrefix}, v...)
-	p = append(p, l.DefaultSuffix)
-	return fmt.Sprintf(format, p...)
+	return sprintf(NoLevel, NoLevel, format, l.DefaultPrefix, l.DefaultSuffix, v...)
 }
 
 // Debug prints a log-entry at debug level to the given writer
 func (l *Logger) Debug(v ...any) {
-	if l.Level > -1 {
+	if l.Level > DebugLevel {
 		return
 	}
 	l.Write([]byte(l.Sdebugln(v...)))
@@ -97,29 +114,17 @@ func (l *Logger) Debug(v ...any) {
 
 // Sdebugln returns a log-entry at debug level with a newline at the end
 func (l Logger) Sdebugln(v ...any) string {
-	if l.Level > -1 {
-		return ""
-	}
-	for range v {
-		l.DebugFormat = l.DebugFormat + "%v "
-	}
-	l.DebugFormat = l.DebugFormat + "%s"
-	return l.Sdebugf(l.DebugFormat, v...) + "\n"
+	return sprintln(l.Level, DebugLevel, l.DebugFormat, l.DebugPrefix, l.DebugSuffix, v...)
 }
 
 // Sdebugf returns a log-entry at debug level following the format
 func (l *Logger) Sdebugf(format string, v ...any) string {
-	if l.Level > -1 {
-		return ""
-	}
-	p := append([]any{l.DebugPrefix}, v...)
-	p = append(p, l.DebugSuffix)
-	return fmt.Sprintf(format, p...)
+	return sprintf(l.Level, DebugLevel, format, l.DebugPrefix, l.DefaultSuffix, v...)
 }
 
 // Error prints a log-entry at error level to the given writer
 func (l *Logger) Error(v ...any) {
-	if l.Level > -1 {
+	if l.Level > ErrorLevel {
 		return
 	}
 	l.Write([]byte(l.Serrorln(v...)))
@@ -127,24 +132,12 @@ func (l *Logger) Error(v ...any) {
 
 // Serrorln returns a log-entry at error level with a newline at the end
 func (l Logger) Serrorln(v ...any) string {
-	if l.Level > -1 {
-		return ""
-	}
-	for range v {
-		l.ErrorFormat = l.ErrorFormat + "%v "
-	}
-	l.ErrorFormat = l.ErrorFormat + "%s"
-	return l.Serrorf(l.ErrorFormat, v...) + "\n"
+	return sprintln(l.Level, ErrorLevel, l.ErrorFormat, l.ErrorPrefix, l.ErrorSuffix, v...)
 }
 
 // Serrorf returns a log-entry at error level following the format
 func (l *Logger) Serrorf(format string, v ...any) string {
-	if l.Level > -1 {
-		return ""
-	}
-	p := append([]any{l.ErrorPrefix}, v...)
-	p = append(p, l.ErrorSuffix)
-	return fmt.Sprintf(format, p...)
+	return sprintf(l.Level, ErrorLevel, format, l.ErrorPrefix, l.ErrorSuffix, v...)
 }
 
 // Fatal prints a log-entry at error level and exits with 1
@@ -171,7 +164,7 @@ func Println(v ...any) {
 
 // Debug prints a log-entry at debug level to the default writer
 func Debug(v ...any) {
-	if DefaultLogger.Level > -1 {
+	if DefaultLogger.Level > DebugLevel {
 		return
 	}
 	DefaultLogger.Write([]byte(DefaultLogger.Sdebugln(v...)))
@@ -179,7 +172,7 @@ func Debug(v ...any) {
 
 // Error prints a log-entry at error level to the default writer
 func Error(v ...any) {
-	if DefaultLogger.Level > -1 {
+	if DefaultLogger.Level > ErrorLevel {
 		return
 	}
 	DefaultLogger.Write([]byte(DefaultLogger.Serrorln(v...)))
