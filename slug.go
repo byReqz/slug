@@ -67,6 +67,31 @@ func NewLogger() *Logger {
 	return &l
 }
 
+// SetOutput sets the loggers output to the given writer
+func (l *Logger) SetOutput(w io.Writer) {
+	l.Output = w
+}
+
+// SetOutputFile sets the loggers output to a file, it should be closed with Close()
+func (l *Logger) SetOutputFile(path string) error {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	l.Output = f
+	return nil
+}
+
+// Close closes the loggers output file if one is set
+func (l *Logger) Close() error {
+	f, isFile := l.Output.(*os.File)
+	if !isFile {
+		return nil
+	}
+	err := f.Close()
+	return err
+}
+
 // sprintln returns a log-entry at the given level with the given format, prefix, suffix and args + newline at the end
 func sprintln(loggerlevel int, loglevel int, format string, prefix string, suffix string, v ...any) string {
 	if loggerlevel > loglevel {
@@ -146,7 +171,7 @@ func (l *Logger) Fatal(v ...any) {
 	os.Exit(1)
 }
 
-// Write bytes to the loggers writer
+// Write bytes to the logger's writer, falls back to stdout if error and panics if even that fails
 func (l *Logger) Write(b []byte) {
 	_, err := l.Output.Write(b)
 	if err != nil {
