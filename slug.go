@@ -16,11 +16,10 @@ var (
 	InfoLevel    = 0
 	WarningLevel = 1
 	ErrorLevel   = 2
+	Disabled     = 3
 )
 
 type Logger struct {
-	Enabled       bool      // state of logger
-	Color         bool      // whether to use colors
 	Level         int       // the minimum log level the logger will output
 	Output        io.Writer // output of the logger
 	DefaultFormat string    // formatstring for level-less logs
@@ -47,7 +46,6 @@ func init() {
 // NewLogger returns a new default Logger and should be used in most cases
 func NewLogger() *Logger {
 	var l Logger
-	l.Enabled = true
 	l.Output = os.Stdout
 	l.DefaultFormat = "%s"
 	l.DefaultPrefix = fmt.Sprint(time.Now().Format("2006/01/02 15:04:05")) + " | "
