@@ -48,10 +48,9 @@ func init() {
 func NewLogger() *Logger {
 	var l Logger
 	l.Enabled = true
-	l.Color = true
 	l.Output = os.Stdout
 	l.DefaultFormat = "%s"
-	l.DefaultPrefix = fmt.Sprint(time.Now().Round(time.Second).Format("2006/01/02 15:04:05")) + " | "
+	l.DefaultPrefix = fmt.Sprint(time.Now().Format("2006/01/02 15:04:05")) + " | "
 	l.DebugFormat = l.DefaultFormat
 	l.DebugPrefix = l.DefaultPrefix + color.MagentaString("Debug: ")
 	l.DebugSuffix = l.DefaultSuffix
@@ -80,6 +79,27 @@ func (l *Logger) SetOutputFile(path string) error {
 	}
 	l.Output = f
 	return nil
+}
+
+// SetLevel sets the loggers level
+func (l *Logger) SetLevel(lvl int) {
+	l.Level = lvl
+}
+
+// DisableColor removes the coloring from the default level prefixes/suffixes
+func (l *Logger) DisableColor() {
+	l.DebugPrefix = l.DefaultPrefix + "Debug: "
+	l.InfoPrefix = l.DefaultPrefix + "Info: "
+	l.WarningPrefix = l.DefaultPrefix + "Warning: "
+	l.ErrorPrefix = l.DefaultPrefix + "Error: "
+}
+
+// EnableColor resets the coloring on the default level prefixes/suffixes
+func (l *Logger) EnableColor() {
+	l.DebugPrefix = l.DefaultPrefix + color.MagentaString("Debug: ")
+	l.InfoPrefix = l.DefaultPrefix + color.CyanString("Info: ")
+	l.WarningPrefix = l.DefaultPrefix + color.YellowString("Warning: ")
+	l.ErrorPrefix = l.DefaultPrefix + color.RedString("Error: ")
 }
 
 // Close closes the loggers output file if one is set
