@@ -11,12 +11,12 @@ import (
 var DefaultLogger *Logger // logger using default configuration
 
 var (
-	NoLevel      = -2
-	DebugLevel   = -1
-	InfoLevel    = 0
-	WarningLevel = 1
-	ErrorLevel   = 2
-	Disabled     = 3
+	NoLevel      = -2 // log without level, level-less logs will always be printed regardless of logger level
+	DebugLevel   = -1 // log at >= debug level
+	InfoLevel    = 0  // log at >= info level
+	WarningLevel = 1  // log at >= warning level
+	ErrorLevel   = 2  // log at >= error level
+	Disabled     = 3  // log at > error level (disable the logger)
 )
 
 type Logger struct {
@@ -70,6 +70,7 @@ func (l *Logger) SetOutput(w io.Writer) {
 }
 
 // SetOutputFile sets the loggers output to a file, it should be closed with Close()
+// the given path will be appended to
 func (l *Logger) SetOutputFile(path string) error {
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
