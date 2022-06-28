@@ -228,7 +228,7 @@ func (l *Logger) Sinfof(format string, v ...any) string {
 
 // Warning prints a log-entry at warning level to the given writer
 func (l *Logger) Warning(v ...any) {
-	if l.Level > InfoLevel {
+	if l.Level > WarningLevel {
 		return
 	}
 	l.Write([]byte(l.Swarningln(v...)))
