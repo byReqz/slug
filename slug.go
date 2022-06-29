@@ -181,7 +181,7 @@ func (l *Logger) Println(v ...any) {
 }
 
 // Sprintln returns a level-less log-entry with a newline at the end
-func (l Logger) Sprintln(v ...any) string {
+func (l *Logger) Sprintln(v ...any) string {
 	return sprintln(NoLevel, NoLevel, l.DefaultFormat, l.DefaultPrefix, l.DefaultSuffix, v...)
 }
 
@@ -199,7 +199,7 @@ func (l *Logger) Debug(v ...any) {
 }
 
 // Sdebugln returns a log-entry at debug level with a newline at the end
-func (l Logger) Sdebugln(v ...any) string {
+func (l *Logger) Sdebugln(v ...any) string {
 	return sprintln(l.Level, DebugLevel, l.DebugFormat, l.DebugPrefix, l.DebugSuffix, v...)
 }
 
@@ -217,7 +217,7 @@ func (l *Logger) Info(v ...any) {
 }
 
 // Sinfoln returns a log-entry at info level with a newline at the end
-func (l Logger) Sinfoln(v ...any) string {
+func (l *Logger) Sinfoln(v ...any) string {
 	return sprintln(l.Level, InfoLevel, l.InfoFormat, l.InfoPrefix, l.InfoSuffix, v...)
 }
 
@@ -235,7 +235,7 @@ func (l *Logger) Warning(v ...any) {
 }
 
 // Swarningln returns a log-entry at warning level with a newline at the end
-func (l Logger) Swarningln(v ...any) string {
+func (l *Logger) Swarningln(v ...any) string {
 	return sprintln(l.Level, WarningLevel, l.WarningFormat, l.WarningPrefix, l.WarningSuffix, v...)
 }
 
@@ -253,7 +253,7 @@ func (l *Logger) Error(v ...any) {
 }
 
 // Serrorln returns a log-entry at error level with a newline at the end
-func (l Logger) Serrorln(v ...any) string {
+func (l *Logger) Serrorln(v ...any) string {
 	return sprintln(l.Level, ErrorLevel, l.ErrorFormat, l.ErrorPrefix, l.ErrorSuffix, v...)
 }
 

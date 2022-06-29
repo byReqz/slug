@@ -15,6 +15,7 @@ func logrunner(l *slug.Logger) {
 
 func main() {
 	l := slug.NewLogger()
+	l.SetLevel(slug.DebugLevel)
 	err := l.SetOutputFile("demo.log")
 	if err != nil {
 		slug.Fatal(err)
@@ -24,7 +25,7 @@ func main() {
 	logrunner(l)
 
 	l.DisableColor()
-	l.Println()
+	l.Write([]byte("\n"))
 	l.Println("log without colors")
 	logrunner(l)
 
