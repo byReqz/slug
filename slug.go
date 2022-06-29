@@ -175,6 +175,11 @@ func Fatal(v ...any) {
 	DefaultLogger.Fatal(v...)
 }
 
+// Panic prints a log-entry at the default error level and panics
+func Panic(v ...any) {
+	panic(DefaultLogger.Serrorln(v...))
+}
+
 // Println prints a level-less log-entry to the given writer
 func (l *Logger) Println(v ...any) {
 	l.Write([]byte(l.Sprintln(v...)))
@@ -266,6 +271,11 @@ func (l *Logger) Serrorf(format string, v ...any) string {
 func (l *Logger) Fatal(v ...any) {
 	l.Error(v...)
 	os.Exit(1)
+}
+
+// Panic prints a log-entry at error level and panics
+func (l *Logger) Panic(v ...any) {
+	panic(l.Serrorln(v...))
 }
 
 // Write bytes to the logger's writer, falls back to stdout if error and panics if even that fails
