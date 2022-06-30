@@ -111,8 +111,8 @@ func (l *Logger) Close() error {
 	return err
 }
 
-// sprintln returns a log-entry at the given level with the given format, prefix, suffix and args + newline at the end
-func sprintln(loggerlevel int, loglevel int, format string, prefix string, suffix string, v ...any) string {
+// sprint returns a log-entry at the given level with the given format, prefix, suffix and args
+func sprint(loggerlevel int, loglevel int, format string, prefix string, suffix string, v ...any) string {
 	if loggerlevel > loglevel {
 		return ""
 	}
@@ -120,7 +120,7 @@ func sprintln(loggerlevel int, loglevel int, format string, prefix string, suffi
 		format = format + "%v "
 	}
 	format = format + "%s"
-	return sprintf(loggerlevel, loglevel, format, prefix, suffix, v...) + "\n"
+	return sprintf(loggerlevel, loglevel, format, prefix, suffix, v...)
 }
 
 // sprintf returns a log-entry at the given level with the given format, prefix, suffix and args
@@ -135,7 +135,7 @@ func sprintf(loggerlevel int, loglevel int, format string, prefix string, suffix
 
 // Println prints a level-less log-entry to the default writer
 func Println(v ...any) {
-	DefaultLogger.Write([]byte(DefaultLogger.Sprintln(v...)))
+	DefaultLogger.Write([]byte(DefaultLogger.Sprint(v...) + "\n"))
 }
 
 // Debug prints a log-entry at debug level to the default writer
@@ -143,7 +143,7 @@ func Debug(v ...any) {
 	if DefaultLogger.Level > DebugLevel {
 		return
 	}
-	DefaultLogger.Write([]byte(DefaultLogger.Sdebugln(v...)))
+	DefaultLogger.Write([]byte(DefaultLogger.Sdebug(v...) + "\n"))
 }
 
 // Info prints a log-entry at info level to the default writer
@@ -151,7 +151,7 @@ func Info(v ...any) {
 	if DefaultLogger.Level > InfoLevel {
 		return
 	}
-	DefaultLogger.Write([]byte(DefaultLogger.Sinfoln(v...)))
+	DefaultLogger.Write([]byte(DefaultLogger.Sinfo(v...)))
 }
 
 // Warning prints a log-entry at warning level to the default writer
@@ -159,7 +159,7 @@ func Warning(v ...any) {
 	if DefaultLogger.Level > WarningLevel {
 		return
 	}
-	DefaultLogger.Write([]byte(DefaultLogger.Swarningln(v...)))
+	DefaultLogger.Write([]byte(DefaultLogger.Swarning(v...) + "\n"))
 }
 
 // Error prints a log-entry at error level to the default writer
@@ -167,7 +167,7 @@ func Error(v ...any) {
 	if DefaultLogger.Level > ErrorLevel {
 		return
 	}
-	DefaultLogger.Write([]byte(DefaultLogger.Serrorln(v...)))
+	DefaultLogger.Write([]byte(DefaultLogger.Serror(v...) + "\n"))
 }
 
 // Fatal prints a log-entry at the default error level and exits with 1
@@ -177,17 +177,17 @@ func Fatal(v ...any) {
 
 // Panic prints a log-entry at the default error level and panics
 func Panic(v ...any) {
-	panic(DefaultLogger.Serrorln(v...))
+	panic(DefaultLogger.Serror(v...))
 }
 
 // Println prints a level-less log-entry to the given writer
 func (l *Logger) Println(v ...any) {
-	l.Write([]byte(l.Sprintln(v...)))
+	l.Write([]byte(l.Sprint(v...) + "\n"))
 }
 
-// Sprintln returns a level-less log-entry with a newline at the end
-func (l *Logger) Sprintln(v ...any) string {
-	return sprintln(NoLevel, NoLevel, l.DefaultFormat, l.DefaultPrefix, l.DefaultSuffix, v...)
+// Sprint returns a level-less log-entry
+func (l *Logger) Sprint(v ...any) string {
+	return sprint(NoLevel, NoLevel, l.DefaultFormat, l.DefaultPrefix, l.DefaultSuffix, v...)
 }
 
 // Sprintf returns a level-less log-entry following the format
@@ -200,12 +200,12 @@ func (l *Logger) Debug(v ...any) {
 	if l.Level > DebugLevel {
 		return
 	}
-	l.Write([]byte(l.Sdebugln(v...)))
+	l.Write([]byte(l.Sdebug(v...) + "\n"))
 }
 
-// Sdebugln returns a log-entry at debug level with a newline at the end
-func (l *Logger) Sdebugln(v ...any) string {
-	return sprintln(l.Level, DebugLevel, l.DebugFormat, l.DebugPrefix, l.DebugSuffix, v...)
+// Sdebug returns a log-entry at debug level
+func (l *Logger) Sdebug(v ...any) string {
+	return sprint(l.Level, DebugLevel, l.DebugFormat, l.DebugPrefix, l.DebugSuffix, v...)
 }
 
 // Sdebugf returns a log-entry at debug level following the format
@@ -218,12 +218,12 @@ func (l *Logger) Info(v ...any) {
 	if l.Level > InfoLevel {
 		return
 	}
-	l.Write([]byte(l.Sinfoln(v...)))
+	l.Write([]byte(l.Sinfo(v...) + "\n"))
 }
 
-// Sinfoln returns a log-entry at info level with a newline at the end
-func (l *Logger) Sinfoln(v ...any) string {
-	return sprintln(l.Level, InfoLevel, l.InfoFormat, l.InfoPrefix, l.InfoSuffix, v...)
+// Sinfo returns a log-entry at info level
+func (l *Logger) Sinfo(v ...any) string {
+	return sprint(l.Level, InfoLevel, l.InfoFormat, l.InfoPrefix, l.InfoSuffix, v...)
 }
 
 // Sinfof returns a log-entry at info level following the format
@@ -236,12 +236,12 @@ func (l *Logger) Warning(v ...any) {
 	if l.Level > WarningLevel {
 		return
 	}
-	l.Write([]byte(l.Swarningln(v...)))
+	l.Write([]byte(l.Swarning(v...) + "\n"))
 }
 
-// Swarningln returns a log-entry at warning level with a newline at the end
-func (l *Logger) Swarningln(v ...any) string {
-	return sprintln(l.Level, WarningLevel, l.WarningFormat, l.WarningPrefix, l.WarningSuffix, v...)
+// Swarning returns a log-entry at warning level
+func (l *Logger) Swarning(v ...any) string {
+	return sprint(l.Level, WarningLevel, l.WarningFormat, l.WarningPrefix, l.WarningSuffix, v...)
 }
 
 // Swarningf returns a log-entry at warning level following the format
@@ -254,12 +254,12 @@ func (l *Logger) Error(v ...any) {
 	if l.Level > ErrorLevel {
 		return
 	}
-	l.Write([]byte(l.Serrorln(v...)))
+	l.Write([]byte(l.Serror(v...) + "\n"))
 }
 
-// Serrorln returns a log-entry at error level with a newline at the end
-func (l *Logger) Serrorln(v ...any) string {
-	return sprintln(l.Level, ErrorLevel, l.ErrorFormat, l.ErrorPrefix, l.ErrorSuffix, v...)
+// Serror returns a log-entry at error level
+func (l *Logger) Serror(v ...any) string {
+	return sprint(l.Level, ErrorLevel, l.ErrorFormat, l.ErrorPrefix, l.ErrorSuffix, v...)
 }
 
 // Serrorf returns a log-entry at error level following the format
@@ -275,7 +275,7 @@ func (l *Logger) Fatal(v ...any) {
 
 // Panic prints a log-entry at error level and panics
 func (l *Logger) Panic(v ...any) {
-	panic(l.Serrorln(v...))
+	panic(l.Serror(v...))
 }
 
 // Write bytes to the logger's writer, falls back to stdout if error and panics if even that fails
