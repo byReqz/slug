@@ -151,7 +151,7 @@ func Info(v ...any) {
 	if DefaultLogger.Level > InfoLevel {
 		return
 	}
-	DefaultLogger.Write([]byte(DefaultLogger.Sinfo(v...)))
+	DefaultLogger.Write([]byte(DefaultLogger.Sinfo(v...) + "\n"))
 }
 
 // Warning prints a log-entry at warning level to the default writer
