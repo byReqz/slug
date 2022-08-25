@@ -21,7 +21,8 @@ var (
 
 type Logger struct {
 	Level         int       // the minimum log level the logger will output
-	Output        io.Writer // output of the logger
+	Output        io.Writer // default output of the logger
+	ErrOutput     io.Writer // default output for warning and error level logs
 	DefaultFormat string    // formatstring for level-less logs
 	DefaultPrefix string    // message prefix for level-less logs
 	DefaultSuffix string    // message suffix for level-less logs
@@ -47,6 +48,7 @@ func init() {
 func NewLogger() *Logger {
 	var l Logger
 	l.Output = os.Stdout
+	l.ErrOutput = os.Stderr
 	l.DefaultFormat = "%s"
 	l.DefaultPrefix = fmt.Sprint(time.Now().Format("2006/01/02 15:04:05")) + " | "
 	l.DebugFormat = l.DefaultFormat
@@ -64,14 +66,30 @@ func NewLogger() *Logger {
 	return &l
 }
 
-// SetOutput sets the loggers output to the given writer
+// SetOutput sets the loggers default output to the given writer
 func (l *Logger) SetOutput(w io.Writer) {
 	l.Output = w
 }
 
-// SetOutputFile sets the loggers output to a file, it should be closed with Close()
+// SetErrOutput sets the loggers output for error and warning level logs to the given writer
+func (l *Logger) SetErrOutput(w io.Writer) {
+	l.ErrOutput = w
+}
+
+// SetOutputFile sets the default loggers output to a file, it should be closed with Close()
 // the given path will be appended to
 func (l *Logger) SetOutputFile(path string) error {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	l.Output = f
+	return nil
+}
+
+// SetErrOutputFile sets the loggers output for error and warning level logs to a file, it should be closed with Close()
+// the given path will be appended to
+func (l *Logger) SetErrOutputFile(path string) error {
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -159,7 +177,7 @@ func Warning(v ...any) {
 	if DefaultLogger.Level > WarningLevel {
 		return
 	}
-	DefaultLogger.Write([]byte(DefaultLogger.Swarning(v...) + "\n"))
+	DefaultLogger.WriteErr([]byte(DefaultLogger.Swarning(v...) + "\n"))
 }
 
 // Error prints a log-entry at error level to the default writer
@@ -167,7 +185,7 @@ func Error(v ...any) {
 	if DefaultLogger.Level > ErrorLevel {
 		return
 	}
-	DefaultLogger.Write([]byte(DefaultLogger.Serror(v...) + "\n"))
+	DefaultLogger.WriteErr([]byte(DefaultLogger.Serror(v...) + "\n"))
 }
 
 // Fatal prints a log-entry at the default error level and exits with 1
@@ -236,7 +254,7 @@ func (l *Logger) Warning(v ...any) {
 	if l.Level > WarningLevel {
 		return
 	}
-	l.Write([]byte(l.Swarning(v...) + "\n"))
+	l.WriteErr([]byte(l.Swarning(v...) + "\n"))
 }
 
 // Swarning returns a log-entry at warning level
@@ -254,7 +272,7 @@ func (l *Logger) Error(v ...any) {
 	if l.Level > ErrorLevel {
 		return
 	}
-	l.Write([]byte(l.Serror(v...) + "\n"))
+	l.WriteErr([]byte(l.Serror(v...) + "\n"))
 }
 
 // Serror returns a log-entry at error level
@@ -278,7 +296,7 @@ func (l *Logger) Panic(v ...any) {
 	panic(l.Serror(v...))
 }
 
-// Write bytes to the logger's writer, falls back to stdout if error and panics if even that fails
+// Write writes bytes to the logger's writer, falls back to stdout if error and panics if even that fails
 func (l *Logger) Write(b []byte) {
 	_, err := l.Output.Write(b)
 	if err != nil {
@@ -286,5 +304,13 @@ func (l *Logger) Write(b []byte) {
 		if err != nil {
 			panic("Failed printing to given output writer and also failed falling back to stdout")
 		}
+	}
+}
+
+// WriteErr writes bytes to the logger's  writer, falls back to Write() if error and panics if even that fails
+func (l *Logger) WriteErr(b []byte) {
+	_, err := l.ErrOutput.Write(b)
+	if err != nil {
+		l.Write(b)
 	}
 }
