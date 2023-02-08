@@ -1,14 +1,9 @@
+// Package slug is a simple structured logging utility.
 package slug
 
-import (
-	"fmt"
-	"github.com/fatih/color"
-	"io"
-	"os"
-	"time"
-)
+import "os"
 
-var DefaultLogger *Logger // logger using default configuration
+var DefaultLoggerSet = NewConsoleLoggerSet() // logger set using default configuration
 
 var (
 	NoLevel      = -2 // log without level, level-less logs will always be printed regardless of logger level
@@ -19,61 +14,263 @@ var (
 	Disabled     = 3  // log at > error level (disable the logger)
 )
 
-type Logger struct {
-	Level         int       // the minimum log level the logger will output
-	Output        io.Writer // default output of the logger
-	ErrOutput     io.Writer // default output for warning and error level logs
-	DefaultFormat string    // formatstring for level-less logs
-	DefaultPrefix string    // message prefix for level-less logs
-	DefaultSuffix string    // message suffix for level-less logs
-	DebugFormat   string    // formatstring for debug level logs
-	DebugPrefix   string    // message prefix for debug level logs
-	DebugSuffix   string    // message suffix for debug level logs
-	InfoFormat    string    // formatstring for info level logs
-	InfoPrefix    string    // message prefix for info level logs
-	InfoSuffix    string    // message suffix for info level logs
-	WarningFormat string    // formatstring for warning level logs
-	WarningPrefix string    // message prefix for warning level logs
-	WarningSuffix string    // message suffix for warning level logs
-	ErrorFormat   string    // formatstring for error level logs
-	ErrorPrefix   string    // message prefix for error level logs
-	ErrorSuffix   string    // message suffix for error level logs
+// Logger defines a standardized logger interface.
+type Logger interface {
+	Level() int                // return the loggers level
+	SetLevel(lvl int)          // set the loggers level
+	Format() string            // return the loggers formatting string
+	SetFormat(format string)   // set the loggers formatting string
+	SWrite(data ...any) string // return a string formatted as the logger
+	Write(data ...any)         // write data to the logger
+	WriteE(data ...any) error  // write data to the logger and report about errors
 }
 
-func init() {
-	DefaultLogger = NewLogger() // set DefaultLogger
+// LoggerSet is a set of loggers.
+type LoggerSet struct {
+	Level   int      // the level which the set is operating on
+	loggers []Logger // the loggers of the set
 }
 
-// NewLogger returns a new default Logger and should be used in most cases
-func NewLogger() *Logger {
-	var l Logger
-	l.Output = os.Stdout
-	l.ErrOutput = os.Stderr
-	l.DefaultFormat = "%s"
-	l.DefaultPrefix = fmt.Sprint(time.Now().Format("2006/01/02 15:04:05")) + " | "
-	l.DebugFormat = l.DefaultFormat
-	l.DebugPrefix = l.DefaultPrefix + color.MagentaString("Debug: ")
-	l.DebugSuffix = l.DefaultSuffix
-	l.InfoFormat = l.DefaultFormat
-	l.InfoPrefix = l.DefaultPrefix + color.CyanString("Info: ")
-	l.InfoSuffix = l.DefaultSuffix
-	l.WarningFormat = l.DefaultFormat
-	l.WarningPrefix = l.DefaultPrefix + color.YellowString("Warning: ")
-	l.WarningSuffix = l.DefaultSuffix
-	l.ErrorFormat = l.DefaultFormat
-	l.ErrorPrefix = l.DefaultPrefix + color.RedString("Error: ")
-	l.ErrorSuffix = l.DefaultSuffix
-	return &l
+// AddLogger adds a new logger to the set.
+func (ls *LoggerSet) AddLogger(l ...Logger) {
+	ls.loggers = append(ls.loggers, l...)
 }
+
+// SprintAt returns the formatted outputs of the sets loggers at the given loglevel.
+func (ls *LoggerSet) SprintAt(level int, v ...any) []string {
+	var outs []string
+	for _, l := range ls.loggers {
+		if level == l.Level() {
+			outs = append(outs, l.SWrite(v...))
+		}
+	}
+	return outs
+}
+
+// PrintAt prints with all the sets loggers at the given loglevel.
+func (ls *LoggerSet) PrintAt(level int, v ...any) {
+	for _, l := range ls.loggers {
+		if level == l.Level() {
+			l.Write(v...)
+		}
+	}
+}
+
+// PrintlnAt prints with all the sets loggers at the given loglevel (and adds a newline).
+func (ls *LoggerSet) PrintlnAt(level int, v ...any) {
+	ls.PrintAt(level, append(v, "\n")...)
+}
+
+// Println prints a level-less log-entry to all loggers in the set (and adds a newline).
+func (ls *LoggerSet) Println(v ...any) {
+	ls.PrintlnAt(NoLevel, v...)
+}
+
+// Print prints a level-less log-entry to all loggers in the set.
+func (ls *LoggerSet) Print(v ...any) {
+	ls.PrintAt(NoLevel, v...)
+}
+
+// Sprint returns the level-less log-entries to all loggers in the set.
+func (ls *LoggerSet) Sprint(v ...any) {
+	ls.SprintAt(NoLevel, v...)
+}
+
+// Debug prints a debug-level log-entry to all loggers in the set.
+func (ls *LoggerSet) Debug(v ...any) {
+	if ls.Level > DebugLevel {
+		return
+	}
+	ls.PrintlnAt(DebugLevel, v...)
+}
+
+// Sdebug returns the debug-level log-entries from all loggers in the default set.
+func (ls *LoggerSet) Sdebug(v ...any) []string {
+	if ls.Level > DebugLevel {
+		return []string{}
+	}
+	return ls.SprintAt(DebugLevel, v...)
+}
+
+// Info prints an info-level log-entry to all loggers in the set.
+func (ls *LoggerSet) Info(v ...any) {
+	if ls.Level > InfoLevel {
+		return
+	}
+	ls.PrintlnAt(InfoLevel, v...)
+}
+
+// Sinfo returns the info-level log-entries from all loggers in the default set.
+func (ls *LoggerSet) Sinfo(v ...any) []string {
+	if ls.Level > InfoLevel {
+		return []string{}
+	}
+	return ls.SprintAt(InfoLevel, v...)
+}
+
+// Warning prints a warning-level log-entry to all loggers in the set.
+func (ls *LoggerSet) Warning(v ...any) {
+	if ls.Level > WarningLevel {
+		return
+	}
+	ls.PrintlnAt(WarningLevel, v...)
+}
+
+// Swarning returns the warning-level log-entries from all loggers in the default set.
+func (ls *LoggerSet) Swarning(v ...any) []string {
+	if ls.Level > WarningLevel {
+		return []string{}
+	}
+	return ls.SprintAt(WarningLevel, v...)
+}
+
+// Error prints a error-level log-entry to all loggers in the set.
+func (ls *LoggerSet) Error(v ...any) {
+	if ls.Level > ErrorLevel {
+		return
+	}
+	ls.PrintlnAt(ErrorLevel, v...)
+}
+
+// Serror returns the error-level log-entries from all loggers in the default set.
+func (ls *LoggerSet) Serror(v ...any) []string {
+	if ls.Level > ErrorLevel {
+		return []string{}
+	}
+	return ls.SprintAt(ErrorLevel, v...)
+}
+
+// Fatal prints an error-level log-entry to all loggers in the set and exits with 1.
+func (ls *LoggerSet) Fatal(v ...any) {
+	ls.PrintlnAt(ErrorLevel, v...)
+	os.Exit(1)
+}
+
+// Panic prints an error-level log-entry to all loggers in the set and panics.
+func (ls *LoggerSet) Panic(v ...any) {
+	panic(ls.Serror(v...))
+}
+
+// SprintAt returns the formatted outputs of the default sets loggers at the given loglevel.
+func SprintAt(level int, v ...any) []string {
+	var outs []string
+	for _, l := range DefaultLoggerSet.loggers {
+		if level == l.Level() {
+			outs = append(outs, l.SWrite(v...))
+		}
+	}
+	return outs
+}
+
+// PrintAt prints with all the default sets loggers at the given loglevel.
+func PrintAt(level int, v ...any) {
+	for _, l := range DefaultLoggerSet.loggers {
+		if level == l.Level() {
+			l.Write(v...)
+		}
+	}
+}
+
+// PrintlnAt prints with all the default sets loggers at the given loglevel (and adds a newline).
+func PrintlnAt(level int, v ...any) {
+	DefaultLoggerSet.PrintAt(level, append(v, "\n")...)
+}
+
+// Println prints a level-less log-entry to all loggers in the default set (and adds a newline).
+func Println(v ...any) {
+	DefaultLoggerSet.PrintlnAt(NoLevel, v...)
+}
+
+// Print prints a level-less log-entry to all loggers in the default set.
+func Print(v ...any) {
+	DefaultLoggerSet.PrintAt(NoLevel, v...)
+}
+
+// Sprint returns the level-less log-entries from all loggers in the default set.
+func Sprint(v ...any) {
+	DefaultLoggerSet.SprintAt(NoLevel, v...)
+}
+
+// Debug prints a debug-level log-entry to all loggers in the default set.
+func Debug(v ...any) {
+	if DefaultLoggerSet.Level > DebugLevel {
+		return
+	}
+	DefaultLoggerSet.PrintlnAt(DebugLevel, v...)
+}
+
+// Sdebug returns the debug-level log-entries from all loggers in the default set.
+func Sdebug(v ...any) []string {
+	if DefaultLoggerSet.Level > DebugLevel {
+		return []string{}
+	}
+	return DefaultLoggerSet.SprintAt(DebugLevel, v...)
+}
+
+// Info prints an info-level log-entry to all loggers in the default set.
+func Info(v ...any) {
+	if DefaultLoggerSet.Level > InfoLevel {
+		return
+	}
+	DefaultLoggerSet.PrintlnAt(InfoLevel, v...)
+}
+
+// Sinfo returns the info-level log-entries from all loggers in the default set.
+func Sinfo(v ...any) []string {
+	if DefaultLoggerSet.Level > InfoLevel {
+		return []string{}
+	}
+	return DefaultLoggerSet.SprintAt(InfoLevel, v...)
+}
+
+// Warning prints a warning-level log-entry to all loggers in the default set.
+func Warning(v ...any) {
+	if DefaultLoggerSet.Level > WarningLevel {
+		return
+	}
+	DefaultLoggerSet.PrintlnAt(WarningLevel, v...)
+}
+
+// Swarning returns the warning-level log-entries from all loggers in the default set.
+func Swarning(v ...any) []string {
+	if DefaultLoggerSet.Level > WarningLevel {
+		return []string{}
+	}
+	return DefaultLoggerSet.SprintAt(WarningLevel, v...)
+}
+
+// Error prints a error-level log-entry to all loggers in the default set.
+func Error(v ...any) {
+	if DefaultLoggerSet.Level > ErrorLevel {
+		return
+	}
+	DefaultLoggerSet.PrintlnAt(ErrorLevel, v...)
+}
+
+// Serror returns the error-level log-entries from all loggers in the default set.
+func Serror(v ...any) []string {
+	if DefaultLoggerSet.Level > ErrorLevel {
+		return []string{}
+	}
+	return DefaultLoggerSet.SprintAt(ErrorLevel, v...)
+}
+
+// Fatal prints an error-level log-entry to all loggers in the default set and exits with 1.
+func Fatal(v ...any) {
+	DefaultLoggerSet.PrintlnAt(ErrorLevel, v...)
+	os.Exit(1)
+}
+
+// Panic prints an error-level log-entry to all loggers in the default set and panics.
+func Panic(v ...any) {
+	panic(DefaultLoggerSet.Serror(v...))
+}
+
+/*
 
 // SetOutput sets the loggers default output to the given writer
 func (l *Logger) SetOutput(w io.Writer) {
 	l.Output = w
-}
-
-// SetErrOutput sets the loggers output for error and warning level logs to the given writer
-func (l *Logger) SetErrOutput(w io.Writer) {
-	l.ErrOutput = w
 }
 
 // SetOutputFile sets the default loggers output to a file, it should be closed with Close()
@@ -85,38 +282,6 @@ func (l *Logger) SetOutputFile(path string) error {
 	}
 	l.Output = f
 	return nil
-}
-
-// SetErrOutputFile sets the loggers output for error and warning level logs to a file, it should be closed with Close()
-// the given path will be appended to
-func (l *Logger) SetErrOutputFile(path string) error {
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	l.Output = f
-	return nil
-}
-
-// SetLevel sets the loggers level
-func (l *Logger) SetLevel(lvl int) {
-	l.Level = lvl
-}
-
-// DisableColor removes the coloring from the default level prefixes/suffixes
-func (l *Logger) DisableColor() {
-	l.DebugPrefix = l.DefaultPrefix + "Debug: "
-	l.InfoPrefix = l.DefaultPrefix + "Info: "
-	l.WarningPrefix = l.DefaultPrefix + "Warning: "
-	l.ErrorPrefix = l.DefaultPrefix + "Error: "
-}
-
-// EnableColor resets the coloring on the default level prefixes/suffixes
-func (l *Logger) EnableColor() {
-	l.DebugPrefix = l.DefaultPrefix + color.MagentaString("Debug: ")
-	l.InfoPrefix = l.DefaultPrefix + color.CyanString("Info: ")
-	l.WarningPrefix = l.DefaultPrefix + color.YellowString("Warning: ")
-	l.ErrorPrefix = l.DefaultPrefix + color.RedString("Error: ")
 }
 
 // Close closes the loggers output file if one is set
@@ -213,35 +378,9 @@ func (l *Logger) Sprintf(format string, v ...any) string {
 	return sprintf(NoLevel, NoLevel, format, l.DefaultPrefix, l.DefaultSuffix, v...)
 }
 
-// Debug prints a log-entry at debug level to the given writer
-func (l *Logger) Debug(v ...any) {
-	if l.Level > DebugLevel {
-		return
-	}
-	l.Write([]byte(l.Sdebug(v...) + "\n"))
-}
-
-// Sdebug returns a log-entry at debug level
-func (l *Logger) Sdebug(v ...any) string {
-	return sprint(l.Level, DebugLevel, l.DebugFormat, l.DebugPrefix, l.DebugSuffix, v...)
-}
-
 // Sdebugf returns a log-entry at debug level following the format
 func (l *Logger) Sdebugf(format string, v ...any) string {
 	return sprintf(l.Level, DebugLevel, format, l.DebugPrefix, l.DebugSuffix, v...)
-}
-
-// Info prints a log-entry at info level to the given writer
-func (l *Logger) Info(v ...any) {
-	if l.Level > InfoLevel {
-		return
-	}
-	l.Write([]byte(l.Sinfo(v...) + "\n"))
-}
-
-// Sinfo returns a log-entry at info level
-func (l *Logger) Sinfo(v ...any) string {
-	return sprint(l.Level, InfoLevel, l.InfoFormat, l.InfoPrefix, l.InfoSuffix, v...)
 }
 
 // Sinfof returns a log-entry at info level following the format
@@ -249,35 +388,9 @@ func (l *Logger) Sinfof(format string, v ...any) string {
 	return sprintf(l.Level, InfoLevel, format, l.InfoPrefix, l.InfoSuffix, v...)
 }
 
-// Warning prints a log-entry at warning level to the given writer
-func (l *Logger) Warning(v ...any) {
-	if l.Level > WarningLevel {
-		return
-	}
-	l.WriteErr([]byte(l.Swarning(v...) + "\n"))
-}
-
-// Swarning returns a log-entry at warning level
-func (l *Logger) Swarning(v ...any) string {
-	return sprint(l.Level, WarningLevel, l.WarningFormat, l.WarningPrefix, l.WarningSuffix, v...)
-}
-
 // Swarningf returns a log-entry at warning level following the format
 func (l *Logger) Swarningf(format string, v ...any) string {
 	return sprintf(l.Level, WarningLevel, format, l.WarningPrefix, l.WarningSuffix, v...)
-}
-
-// Error prints a log-entry at error level to the given writer
-func (l *Logger) Error(v ...any) {
-	if l.Level > ErrorLevel {
-		return
-	}
-	l.WriteErr([]byte(l.Serror(v...) + "\n"))
-}
-
-// Serror returns a log-entry at error level
-func (l *Logger) Serror(v ...any) string {
-	return sprint(l.Level, ErrorLevel, l.ErrorFormat, l.ErrorPrefix, l.ErrorSuffix, v...)
 }
 
 // Serrorf returns a log-entry at error level following the format
@@ -296,21 +409,4 @@ func (l *Logger) Panic(v ...any) {
 	panic(l.Serror(v...))
 }
 
-// Write writes bytes to the logger's writer, falls back to stdout if error and panics if even that fails
-func (l *Logger) Write(b []byte) {
-	_, err := l.Output.Write(b)
-	if err != nil {
-		_, err = os.Stdout.Write(append([]byte("Failed printing to given output writer, falling back to stdout: "+err.Error()+"\n"), b...)) // try to fall back to stdout if error occurred
-		if err != nil {
-			panic("Failed printing to given output writer and also failed falling back to stdout")
-		}
-	}
-}
-
-// WriteErr writes bytes to the logger's  writer, falls back to Write() if error and panics if even that fails
-func (l *Logger) WriteErr(b []byte) {
-	_, err := l.ErrOutput.Write(b)
-	if err != nil {
-		l.Write(b)
-	}
-}
+*/

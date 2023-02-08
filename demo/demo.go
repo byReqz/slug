@@ -1,4 +1,4 @@
-//nolint
+// nolint
 package main
 
 import (
@@ -6,7 +6,7 @@ import (
 	"github.com/byReqz/slug"
 )
 
-func logrunner(l *slug.Logger) {
+func logrunner(l *slug.LoggerSet) {
 	l.Println("test123", 22292, true)
 	l.Debug("test123", 22292, true)
 	l.Info("test123", 22292, true)
@@ -15,7 +15,7 @@ func logrunner(l *slug.Logger) {
 }
 
 func main() {
-	l := slug.NewLogger()
+	l := slug.NewConsoleLoggerSet()
 
 	l.Level = slug.Disabled
 	fmt.Println("disabled:")
@@ -39,10 +39,5 @@ func main() {
 
 	l.Level = slug.ErrorLevel
 	fmt.Println("at error level:")
-	logrunner(l)
-
-	l.Level = slug.NoLevel
-	l.DisableColor()
-	fmt.Println("with colors disabled:")
 	logrunner(l)
 }
