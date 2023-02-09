@@ -1,9 +1,21 @@
 // Package slug is a simple structured logging utility.
 package slug
 
-import "os"
+import (
+	"github.com/byReqz/slug/console"
+	"os"
+)
 
-var DefaultLoggerSet = NewConsoleLoggerSet() // logger set using default configuration
+var DefaultLoggerSet = newDefaultSet() // logger set using default configuration
+
+// newDefaultSet sets the default LoggerSet from console.NewDefaultConsoleLoggers
+func newDefaultSet() *LoggerSet {
+	ls := NewLoggerSet()
+	for _, l := range console.NewDefaultConsoleLoggers() {
+		ls.AddLogger(l)
+	}
+	return &ls
+}
 
 var (
 	NoLevel      = -2 // log without level, level-less logs will always be printed regardless of logger level
@@ -29,6 +41,11 @@ type Logger interface {
 type LoggerSet struct {
 	Level   int      // the level which the set is operating on
 	loggers []Logger // the loggers of the set
+}
+
+// NewLoggerSet returns a LoggerSet with the provided loggers.
+func NewLoggerSet(loggers ...Logger) LoggerSet {
+	return LoggerSet{loggers: loggers}
 }
 
 // AddLogger adds a new logger to the set.

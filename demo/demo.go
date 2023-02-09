@@ -15,7 +15,7 @@ func logrunner(l *slug.LoggerSet) {
 }
 
 func main() {
-	l := slug.NewConsoleLoggerSet()
+	l := slug.DefaultLoggerSet
 
 	l.Level = slug.Disabled
 	fmt.Println("disabled:")
