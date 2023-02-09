@@ -29,9 +29,6 @@ var (
 // Logger defines a standardized logger interface.
 type Logger interface {
 	Level() int                // return the loggers level
-	SetLevel(lvl int)          // set the loggers level
-	Format() string            // return the loggers formatting string
-	SetFormat(format string)   // set the loggers formatting string
 	SWrite(data ...any) string // return a string formatted as the logger
 	Write(data ...any)         // write data to the logger
 	WriteE(data ...any) error  // write data to the logger and report about errors
