@@ -1,5 +1,4 @@
-// Package console defines a slug logger that outputs to the terminal i/o streams.
-package console
+package slug
 
 import (
 	"fmt"
@@ -25,37 +24,38 @@ func NewConsoleLogger() *ConsoleLogger {
 	}
 }
 
-// NewDefaultConsoleLoggers returns an array of ConsoleLoggers using the slug formatting. Warnings and errors will be printed to stderr, everything else to stdout.
-func NewDefaultConsoleLoggers() []*ConsoleLogger {
+// NewConsoleLoggerSet returns an array of ConsoleLoggers using the slug formatting. Warnings and errors will be printed to stderr, everything else to stdout.
+func NewConsoleLoggerSet() *LoggerSet {
 	tn := time.Now().Format("2006/01/02 15:04:05")
-	set := append([]*ConsoleLogger{},
+	var ls LoggerSet
+	ls.AddLogger(
 		&ConsoleLogger{
-			level:  -2,
+			level:  NoLevel,
 			format: tn + " | %s",
 			output: os.Stdout,
 		},
 		&ConsoleLogger{
-			level:  -1,
+			level:  DebugLevel,
 			format: tn + " | " + color.MagentaString("Debug:") + " %s",
 			output: os.Stdout,
 		},
 		&ConsoleLogger{
-			level:  0,
+			level:  InfoLevel,
 			format: tn + " | " + color.CyanString("Info:") + " %s",
 			output: os.Stdout,
 		},
 		&ConsoleLogger{
-			level:  1,
+			level:  WarningLevel,
 			format: tn + " | " + color.YellowString("Warning:") + " %s",
 			output: os.Stderr,
 		},
 		&ConsoleLogger{
-			level:  2,
+			level:  ErrorLevel,
 			format: tn + " | " + color.RedString("Error:") + " %s",
 			output: os.Stderr,
 		},
 	)
-	return set
+	return &ls
 }
 
 // Level returns the loggers level.

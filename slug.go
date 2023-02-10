@@ -2,20 +2,10 @@
 package slug
 
 import (
-	"github.com/byReqz/slug/console"
 	"os"
 )
 
-var DefaultLoggerSet = newDefaultSet() // logger set using default configuration
-
-// newDefaultSet sets the default LoggerSet from console.NewDefaultConsoleLoggers
-func newDefaultSet() *LoggerSet {
-	ls := NewLoggerSet()
-	for _, l := range console.NewDefaultConsoleLoggers() {
-		ls.AddLogger(l)
-	}
-	return &ls
-}
+var DefaultLoggerSet = NewConsoleLoggerSet() // logger set using default configuration
 
 var (
 	NoLevel      = -2 // log without level, level-less logs will always be printed regardless of logger level
